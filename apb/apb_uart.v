@@ -1,3 +1,48 @@
+//==============================================================================
+// Module Name : apb_uart
+// Project     : APB UART Peripheral
+// Author      : Ansh Shinde
+//
+// Description :
+//
+// AMBA APB-compliant UART peripheral integrating UART transmitter,
+// UART receiver, APB slave interface, register bank, interrupt
+// generation, hardware flow control, and error reporting.
+//
+// The module allows a processor to configure UART operation through
+// memory-mapped registers and exchange data using APB transactions.
+//
+// Features:
+// - AMBA APB Slave Interface
+// - UART Transmission and Reception
+// - Configurable Baud Rate Generator
+// - TX and RX FIFO Buffering
+// - RTS/CTS Hardware Flow Control
+// - TX and RX Interrupt Generation
+// - Parity Error Detection
+// - Framing Error Detection
+// - Overrun Error Detection
+// - Memory-Mapped Register Interface
+//
+// Register Map:
+// - 0x00 : Control Register
+// - 0x04 : Status Register
+// - 0x08 : Baud Rate Register
+// - 0x0C : TX Data Register
+// - 0x10 : RX Data Register
+//
+// Notes:
+// - Address decoding uses paddr[4:2].
+// - TX FIFO writes occur through TX Data Register (0x0C).
+// - RX FIFO reads occur through RX Data Register (0x10).
+// - PREADY is generated for a single APB access cycle.
+// - Invalid register accesses generate PSLVERR.
+//
+// Submodules:
+// - top_tx : UART transmitter with FIFO
+// - top_rx : UART receiver with FIFO
+//
+//==============================================================================
 module apb_uart( 
     input            preset,
     input            pclk,
