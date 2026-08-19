@@ -1,211 +1,382 @@
-AHB-Lite to APB Bridge (Verilog HDL)
-Overview
+# AHB-Lite to APB Bridge
 
-This project implements an AMBA AHB-Lite to APB Bridge in Verilog HDL. The bridge enables communication between an AHB-Lite master and APB peripherals by translating AHB-Lite transactions into APB-compliant transfers.
+## Overview
 
-The design supports both read and write single transfers and handles address decoding, transfer validation, APB control generation, and protocol error reporting.
+This project implements an **AHB-Lite to APB Bridge** in Verilog HDL. The bridge enables communication between an **AHB-Lite master** and multiple **APB peripherals** by translating AHB-Lite transactions into APB-compliant transfers.
 
-The bridge is intended for low-speed peripherals such as UARTs, timers, GPIOs, and other APB-based devices.
+The design supports both **read and write transactions**, performs **address decoding**, validates transfer size and address alignment, generates APB control signals, and handles APB wait states and error responses.
 
-Note: This implementation supports only single AHB-Lite transfers and does not support burst transactions (INCR, WRAP, or undefined-length bursts).
+> **Note:** This implementation supports only **single AHB-Lite transfers** and does **not support burst transactions (INCR, WRAP, INCR4/8/16, WRAP4/8/16)**.
 
-Features
-AMBA AHB-Lite Slave Interface
-AMBA APB Master Interface
-Single Read Transfers
-Single Write Transfers
-Address Validation
-Transfer Size Validation
-Address Alignment Checking
-APB Peripheral Selection (4 Slaves)
-AHB Response Generation
-APB Error Propagation
-Pipelined Address/Data Handling
-Synthesizable RTL Design
-Verified using Verilog Testbench
-Supported Transfers
-AHB-Lite Transfers
-Transfer Type	Supported
-IDLE	Yes
-BUSY	Yes
-NONSEQ	Yes
-SEQ	Treated as Single Transfer
-Burst Transfers	No
-Transfer Sizes
-Size	Supported
-Byte (8-bit)	Yes
-Halfword (16-bit)	Yes
-Word (32-bit)	Yes
+---
 
-The bridge performs alignment checks according to the transfer size:
+## Features
 
-Byte → Any address
-Halfword → Address[0] = 0
-Word → Address[1:0] = 00
+- AHB-Lite Slave Interface
+- APB Master Interface
+- Single Read Transactions
+- Single Write Transactions
+- Address Decoding for Multiple APB Slaves
+- Address Range Validation
+- Transfer Size Validation
+- Address Alignment Checking
+- APB Wait-State Handling using PREADY
+- APB Error Handling using PSLVERR
+- Pipelined Address/Data Capture
+- Synthesizable RTL Design
+- Verified using Verilog Testbench
 
-Invalid alignments generate an AHB error response.
+---
 
-Architecture
-                 AHB-Lite Master
+## Architecture
+
+```
+                +------------------+
+                |   AHB-Lite       |
+                |     Master       |
+                +--------+---------+
+                         |
+                         |
+                 AHB-Lite Bus
+                         |
+        +-------------------------------+
+        |       AHB-Lite to APB         |
+        |            Bridge             |
+        |                               |
+        |  +-------------------------+  |
+        |  |      Control Path       |  |
+        |  +-------------------------+  |
+        |                               |
+        |  +-------------------------+  |
+        |  |       Data Path         |  |
+        |  +-------------------------+  |
+        +---------------+---------------+
                         |
-                        |
-                +-------+-------+
-                |               |
-                |  AHB-APB      |
-                |   Bridge      |
-                |               |
-                +-------+-------+
-                        |
-                APB Master Bus
+                      APB Bus
                         |
        +--------+--------+--------+--------+
        |        |        |        |        |
      PSEL0    PSEL1    PSEL2    PSEL3   ...
+```
 
-The bridge is divided into two major blocks:
+---
 
-Control Path
+## Supported Transfers
 
-Responsible for:
+### Write Transfer
 
-AHB/APB protocol conversion
-State machine control
-APB setup and access phase generation
-HREADY generation
-HRESP generation
-PWRITE generation
-Error handling
-Data Path
+1. AHB master places address and control information.
+2. Bridge validates address and transfer size.
+3. Address and data are captured in pipeline registers.
+4. APB setup phase is generated.
+5. APB access phase is initiated.
+6. Transfer completes when `PREADY = 1`.
 
-Responsible for:
+### Read Transfer
 
-Address pipelining
-Data pipelining
-Transfer validation
-Address decoding
-APB peripheral selection
-Read data return path
-AHB-Lite Interface
-Inputs
-Signal	Description
-HCLK	System Clock
-HRESET	Reset
-HSELB	Bridge Select
-HWRITE	Read/Write Control
-HTRANS	Transfer Type
-HSIZE	Transfer Size
-HADDR	Address
-HWDATA	Write Data
-Outputs
-Signal	Description
-HREADY	Transfer Completion
-HRESP	Error Response
-HRDATA	Read Data
-APB Interface
-Outputs
-Signal	Description
-PSEL0-PSEL3	Peripheral Select
-PENABLE	APB Enable
-PWRITE	APB Read/Write
-PADDR	APB Address
-PWDATA	APB Write Data
-Inputs
-Signal	Description
-PRDATA	APB Read Data
-PREADY	APB Ready
-PSLVERR	APB Error Response
-Address Map
+1. AHB master issues read request.
+2. Bridge captures address and control signals.
+3. APB read transaction is generated.
+4. APB peripheral returns data through `PRDATA`.
+5. Data is forwarded to `HRDATA`.
 
-The bridge supports four APB peripherals using address decoding based on address bits [6:5].
+---
 
-Address Range	Selected Peripheral
-0x00 – 0x1F	PSEL0
-0x20 – 0x3F	PSEL1
-0x40 – 0x5F	PSEL2
-0x60 – 0x7F	PSEL3
+## AHB-Lite Interface Signals
 
-Addresses outside this range are considered invalid.
+| Signal | Direction | Description |
+|----------|----------|-------------|
+| HCLK | Input | AHB Clock |
+| HRESET | Input | Reset |
+| HSELB | Input | Slave Select |
+| HWRITE | Input | Read/Write Control |
+| HADDR | Input | Address Bus |
+| HWDATA | Input | Write Data |
+| HRDATA | Output | Read Data |
+| HTRANS | Input | Transfer Type |
+| HSIZE | Input | Transfer Size |
+| HREADY | Output | Transfer Ready |
+| HRESP | Output | Transfer Response |
 
-Error Handling
+---
 
-The bridge generates HRESP = 1 under the following conditions:
+## APB Interface Signals
 
-Invalid Address
+| Signal | Direction | Description |
+|----------|----------|-------------|
+| PADDR | Output | APB Address |
+| PWDATA | Output | APB Write Data |
+| PRDATA | Input | APB Read Data |
+| PSEL0-PSEL3 | Output | Peripheral Select |
+| PENABLE | Output | APB Enable |
+| PWRITE | Output | Read/Write Control |
+| PREADY | Input | APB Ready |
+| PSLVERR | Input | APB Error Response |
 
-Address outside:
+---
 
-0x00 – 0x7C
-Invalid Transfer Alignment
+## Address Mapping
 
-Examples:
+The bridge supports four APB peripheral regions.
 
-Halfword @ 0x01
-Word     @ 0x02
-APB Slave Error
+| Address Range | APB Select |
+|--------------|------------|
+| 0x00 - 0x1F | PSEL0 |
+| 0x20 - 0x3F | PSEL1 |
+| 0x40 - 0x5F | PSEL2 |
+| 0x60 - 0x7F | PSEL3 |
 
-When:
+Address decoding is performed using:
 
+```verilog
+addr_reg2[6:5]
+```
+
+---
+
+## Address Validation
+
+The bridge validates incoming addresses before initiating APB transfers.
+
+Supported address range:
+
+```text
+0x00 - 0x7C
+```
+
+Invalid addresses generate:
+
+```text
+HRESP = 1
+```
+
+---
+
+## Transfer Size Validation
+
+Supported transfer sizes:
+
+| HSIZE | Transfer |
+|--------|----------|
+| 000 | Byte |
+| 001 | Halfword |
+| 010 | Word |
+
+Unsupported sizes generate an error response.
+
+---
+
+## Alignment Checking
+
+### Byte Access
+
+No alignment restrictions.
+
+### Halfword Access
+
+```text
+Address[0] = 0
+```
+
+### Word Access
+
+```text
+Address[1:0] = 00
+```
+
+Misaligned accesses generate:
+
+```text
+HRESP = 1
+```
+
+---
+
+## Control Path FSM
+
+The bridge control path uses a finite-state machine.
+
+### States
+
+| State | Description |
+|---------|------------|
+| IDLE | Waiting for valid transfer |
+| SETUP_W | APB write setup phase |
+| SETUP_R | APB read setup phase |
+| ACCESS | APB access phase |
+| ERROR | Error response state |
+
+### State Flow
+
+```text
+IDLE
+  |
+  +----> SETUP_W ----+
+  |                  |
+  |                  v
+  +----> SETUP_R --> ACCESS
+                        |
+                        +--> ERROR
+                        |
+                        +--> IDLE
+```
+
+---
+
+## Wait-State Handling
+
+The bridge remains in the APB ACCESS state until:
+
+```verilog
+PREADY = 1
+```
+
+This allows APB peripherals to insert wait states when required.
+
+---
+
+## Error Handling
+
+Errors can be generated due to:
+
+### Invalid Address
+
+```text
+Address outside supported range
+```
+
+### Invalid Transfer Size
+
+```text
+Unsupported HSIZE value
+```
+
+### Misaligned Access
+
+```text
+Halfword/Word alignment violation
+```
+
+### APB Slave Error
+
+```text
 PSLVERR = 1
+```
 
-from the selected APB peripheral.
+Error response:
 
-Finite State Machine
+```text
+HRESP = 1
+```
 
-The control path uses a 5-state FSM:
+---
 
-State	Function
-IDLE	Wait for valid transfer
-SETUP_W	APB Write Setup
-SETUP_R	APB Read Setup
-ACCESS	APB Access Phase
-ERROR	Error Response
-Limitations
+## Pipeline Handling
 
-Current implementation does not support:
+The bridge captures AHB signals using internal pipeline registers:
 
-AHB Burst Transfers
-SINGLE ✔
-INCR ✘
-WRAP4 ✘
-WRAP8 ✘
-WRAP16 ✘
-INCR4 ✘
-INCR8 ✘
-INCR16 ✘
-APB4 Features
-Multiple Outstanding Transactions
-Split/Retry Responses
-DMA Support
+```verilog
+addr_reg1
+addr_reg2
+data_reg1
+hwrite_reg
+```
 
-The bridge processes one AHB transaction at a time and waits for APB completion before accepting the next transaction.
+This ensures correct alignment between:
 
-Verification
+- Address Phase
+- Data Phase
+- APB Transfer Generation
 
-The bridge has been verified using Verilog testbenches covering:
+---
 
-Single Write Transfers
-Single Read Transfers
-Address Decoding
-Invalid Address Detection
-Transfer Size Validation
-Alignment Checking
-APB Wait-State Handling
-APB Error Handling
-HREADY Generation
-HRESP Generation
-Tools Used
-Verilog HDL
-Icarus Verilog
-GTKWave
-Simulation
-Compile
+## Limitations
+
+### Burst Transfers Not Supported
+
+The current implementation does **not support**:
+
+- SINGLE Burst Sequences
+- INCR
+- WRAP
+- INCR4
+- INCR8
+- INCR16
+- WRAP4
+- WRAP8
+- WRAP16
+
+Only individual non-burst AHB-Lite transactions are supported.
+
+### APB Version
+
+Current implementation targets:
+
+```text
+AMBA APB3
+```
+
+---
+
+## Verification
+
+The bridge has been verified for:
+
+- Single Write Transfers
+- Single Read Transfers
+- Address Decoding
+- Invalid Address Detection
+- Transfer Size Validation
+- Alignment Checking
+- APB Wait States
+- APB Error Responses
+- Consecutive Transactions
+- Read/Write Switching
+
+---
+
+## Tools Used
+
+- Verilog HDL
+- Icarus Verilog
+- GTKWave
+
+---
+
+## Simulation
+
+### Compile
+
+```bash
 iverilog -g2012 -o simv tb/*.v bridge/*.v
-Run
+```
+
+### Run
+
+```bash
 vvp simv
-View Waveforms
-gtkwave *.vcd
-Author
+```
 
-Ansh Shinde
+### View Waveforms
 
-Project Type: AMBA Bus Architecture / RTL Design / Digital Design Verification
+```bash
+gtkwave waveform.vcd
+```
+
+---
+
+## Future Improvements
+
+- Burst Transfer Support
+- APB4 Support
+- Configurable Address Mapping
+- Multiple Outstanding Requests
+- UVM-Based Verification
+- FIFO-Based Burst Buffering
+- Protocol Assertions (SVA)
+
+---
+
+## Author
+
+**Ansh Shinde**
