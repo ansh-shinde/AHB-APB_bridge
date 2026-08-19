@@ -1,3 +1,48 @@
+//==============================================================================
+// Module Name : data
+// Project     : AHB to APB Bridge
+// Author      : Ansh Shinde
+//
+// Description :
+//
+// Datapath of the AHB-to-APB bridge. This module performs address
+// decoding, transfer validation, pipelining of AHB address/data,
+// APB peripheral selection, and transfer alignment checking.
+//
+// The datapath receives AHB-side transactions and prepares address,
+// data, and control information required by the APB side.
+//
+// Features:
+// - AHB address and data pipelining
+// - APB peripheral address decoding
+// - Transfer size validation
+// - Address range validation
+// - APB address and data generation
+// - HTRANS transfer qualification
+// - Read and write transaction support
+//
+// Address Decoding:
+//
+// Address[6:5] selects APB peripheral:
+//
+//   00 -> PSEL0
+//   01 -> PSEL1
+//   10 -> PSEL2
+//   11 -> PSEL3
+//
+// Supported Transfer Sizes:
+// - Byte (8-bit)
+// - Halfword (16-bit)
+// - Word (32-bit)
+//
+// Notes:
+// - Address alignment is verified according to transfer size.
+// - Only NONSEQ and SEQ transfers are considered valid.
+// - BUSY and IDLE transfers are ignored.
+// - Address and write data are internally pipelined to match
+//   AHB pipelined operation.
+//
+//==============================================================================
 module data(
     input           hclk,
     input           hreset,
