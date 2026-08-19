@@ -1,3 +1,40 @@
+//==============================================================================
+// Module Name : control
+// Project     : AHB to APB Bridge
+// Author      : Ansh Shinde
+//
+// Description :
+//
+// Control path of the AHB-to-APB bridge. This module implements the
+// bridge finite state machine (FSM), generates APB control signals,
+// manages AHB handshaking, and handles error responses.
+//
+// The FSM monitors incoming AHB transactions, validates transfers,
+// initiates APB setup/access phases, and generates appropriate AHB
+// response signals.
+//
+// Features:
+// - AHB transaction monitoring
+// - APB setup and access phase generation
+// - AHB ready/response generation
+// - Write and read transaction support
+// - Error handling through PSLVERR propagation
+// - FSM-based control path implementation
+//
+// FSM States:
+// - IDLE    : Wait for valid AHB transfer
+// - SETUP_W : APB write setup phase
+// - SETUP_R : APB read setup phase
+// - ACCESS  : APB access phase
+// - ERROR   : Error response generation
+//
+// Notes:
+// - Transaction type is stored internally to maintain stable control
+//   signals throughout the APB access phase.
+// - Supports both read and write transfers.
+// - Invalid transfers generate AHB error responses.
+//
+//==============================================================================
 module control(
     input           hclk,
     input           hreset,
