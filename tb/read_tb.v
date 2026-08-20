@@ -225,6 +225,8 @@ initial begin
 
          wait(hready==1);
 
+         @(posedge clk);
+
          repeat(2)@(posedge clk)begin
              htrans=2'b00;
          end    
@@ -239,6 +241,8 @@ initial begin
 
          wait(hready==1);
 
+         @(posedge clk);
+
          repeat(2)@(posedge clk)begin
              htrans=2'b00;
          end
@@ -253,6 +257,8 @@ initial begin
 
          wait(hready==1);
 
+         @(posedge clk);
+
          repeat(2)@(posedge clk)begin
              htrans=2'b00;
          end
@@ -265,10 +271,91 @@ initial begin
              hwrite=0;
          end
 
+         wait(hready==1);
+
+         @(posedge clk);
 
          repeat(2)@(posedge clk)begin
              htrans=2'b00;
-         end    
+         end   
+
+         @(posedge clk)begin
+             htrans=2'b10;
+             hsize=3'b010;
+             hburst=3'b000;
+             haddr=32'h10;
+             hwrite=0;
+         end
+
+         wait(hready==1);
+
+         @(posedge clk);
+
+         repeat(2)@(posedge clk)begin
+             htrans=2'b00;
+         end
+         @(posedge clk)begin
+             htrans=2'b10;
+             hsize=3'b010;
+             hburst=3'b000;
+             haddr=32'h10;
+             hwrite=0;
+         end
+
+         wait(hready==1);
+
+         @(posedge clk);
+
+         repeat(2)@(posedge clk)begin
+             htrans=2'b00;
+         end
+         @(posedge clk)begin
+             htrans=2'b10;
+             hsize=3'b010;
+             hburst=3'b000;
+             haddr=32'h10;
+             hwrite=0;
+         end
+
+         wait(hready==1);
+
+         @(posedge clk);
+
+         repeat(2)@(posedge clk)begin
+             htrans=2'b00;
+         end
+
+         @(posedge clk)begin
+             htrans=2'b10;
+             hsize=3'b010;
+             hburst=3'b000;
+             haddr=32'h10;
+             hwrite=0;
+         end
+
+         wait(hready==1);
+
+         @(posedge clk);
+
+         repeat(2)@(posedge clk)begin
+             htrans=2'b00;
+         end
+
+         @(posedge clk)begin
+             htrans=2'b10;
+             hsize=3'b010;
+             hburst=3'b000;
+             haddr=32'h10;
+             hwrite=0;
+         end
+
+         wait(hready==1);
+
+         @(posedge clk);
+
+         repeat(2)@(posedge clk)begin
+             htrans=2'b00;
+         end
      end
 
 end

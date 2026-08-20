@@ -145,11 +145,9 @@ module apb_uart(
                                       //  and fifo will be on so that data can be read by apb
                                       //  so if it depends on rts then if rx_fifo is nr_full then it will compeletely shut down rx also disabeling rd  
 
-    assign fifo_tx_wr = psel && pwrite && access_start_d && (reg_no==3);  // enable fifo wr only when addr is reg3 and pwrite==1 to avoide writing every cycle
-                                                                          // access_start_d delayed  because data was arriving late and missing the wr signal
-
-    assign fifo_rx_rd = psel && !pwrite && penable && (reg_no == 4); // enable fifo rd only when addr is reg4 and pwrite==0 to avoide reading every cycle
-
+    assign fifo_tx_wr = psel && pwrite && access_start_d && (reg_no==3);  // enable fifo wr only when addr is reg3 and pwrite==1/0 to avoide writing every cycle
+    assign fifo_rx_rd = psel && !pwrite && access_start_d && (reg_no == 4); // single cycle access_start_d to get single cycle wr/rd signal for fifo avoiding multiple rd/wr
+                                                                            // and delayed  because data was arriving late and missing the wr signal
 
 //=====================================================================================
 // this block checks if preset is on and resets
